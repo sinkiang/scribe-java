@@ -1,12 +1,14 @@
 package org.scribe.services;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
-import org.junit.*;
+import java.security.KeyFactory;
+import java.security.PrivateKey;
+import java.security.spec.PKCS8EncodedKeySpec;
 
 import javax.xml.bind.DatatypeConverter;
-import java.security.*;
-import java.security.spec.*;
+
+import org.junit.Test;
 
 public class RSASha1SignatureServiceTest
 {
@@ -36,7 +38,7 @@ public class RSASha1SignatureServiceTest
    * openssl req -x509 -nodes -days 365 -newkey rsa:1024 -sha1 -subj   '/C=GB/ST=/L=Manchester/CN=www.example.com' -keyout   myrsakey.pem -out /tmp/myrsacert.pem
    * openssl pkcs8 -in myrsakey.pem -topk8 -nocrypt -out myrsakey.pk8
    */
-  private static PrivateKey getPrivateKey()
+private static PrivateKey getPrivateKey()
   {
     String str = "MIICdgIBADANBgkqhkiG9w0BAQEFAASCAmAwggJcAgEAAoGBAMPQ5BCMxlUq2TYy\n"+
                  "iRIoEUsz6HGTJhHuasS2nx1Se4Co3lxwxyubVdFj8AuhHNJSmJvjlpbTsGOjLZpr\n"+

@@ -1,7 +1,6 @@
 package org.scribe.model;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -21,7 +20,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpTrace;
 import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.CoreConnectionPNames;
 import org.scribe.exceptions.OAuthConnectionException;
@@ -43,13 +42,10 @@ public class Request {
 	private String url;
 	private Verb verb;
 	private ParameterList querystringParams;
-	private ParameterList bodyParams;
 	private Map<String, String> headers;
-	private String payload = null;
 	private HttpClient httpClient;
 	private HttpUriRequest httpRequest;
 	private String charset;
-	private byte[] bytePayload = null;
 	private boolean connectionKeepAlive = false;
 	private Long connectTimeout = null;
 	private Long readTimeout = null;
@@ -66,7 +62,6 @@ public class Request {
 		this.verb = verb;
 		this.url = url;
 		this.querystringParams = new ParameterList();
-		this.bodyParams = new ParameterList();
 		this.headers = new HashMap<String, String>();
 	}
 
@@ -105,23 +100,23 @@ public class Request {
 		}
 	}
 
-	private HttpUriRequest convertRequest(Verb verb, String url) {
+	private HttpUriRequest convertRequest(Verb verb, String completeUrl) {
 		if (Verb.GET == verb) {
-			return new HttpGet(url);
+			return new HttpGet(this.url);
 		} else if (Verb.POST == verb) {
-			return new HttpPost(url);
+			return new HttpPost(completeUrl);
 		} else if (Verb.PUT == verb) {
-			return new HttpPut(url);
+			return new HttpPut(completeUrl);
 		} else if (Verb.DELETE == verb) {
-			return new HttpDelete(url);
+			return new HttpDelete(completeUrl);
 		} else if (Verb.HEAD == verb) {
-			return new HttpHead(url);
+			return new HttpHead(completeUrl);
 		} else if (Verb.OPTIONS == verb) {
-			return new HttpOptions(url);
+			return new HttpOptions(completeUrl);
 		} else if (Verb.TRACE == verb) {
-			return new HttpTrace(url);
+			return new HttpTrace(completeUrl);
 		} else if (Verb.PATCH == verb) {
-			return new HttpPatch(url);
+			return new HttpPatch(completeUrl);
 		}
 		throw new IllegalArgumentException(
 				String.format("unkown verb:%s", verb));
@@ -149,7 +144,7 @@ public class Request {
 		addHeaders(httpRequest);
 		if (verb.equals(Verb.PUT) || verb.equals(Verb.POST)) {
 			addBody((HttpEntityEnclosingRequestBase) httpRequest,
-					getByteBodyContents());
+					querystringParams.asFormUrlEncodedString());
 		}
 		tuner.tune(this);
 		return new Response(httpClient, httpRequest);
@@ -160,10 +155,11 @@ public class Request {
 			httpRequest.setHeader(key, headers.get(key));
 	}
 
-	void addBody(HttpEntityEnclosingRequestBase httpRequest, byte[] content)
+	void addBody(HttpEntityEnclosingRequestBase httpRequest, String content)
 			throws IOException {
-		ByteArrayEntity entity = new ByteArrayEntity(content);
+		StringEntity entity = new StringEntity(content);
 		entity.setContentType(DEFAULT_CONTENT_TYPE);
+		httpRequest.setEntity(entity);
 	}
 
 	/**
@@ -179,18 +175,6 @@ public class Request {
 	}
 
 	/**
-	 * Add a body Parameter (for POST/ PUT Requests)
-	 * 
-	 * @param key
-	 *            the parameter name
-	 * @param value
-	 *            the parameter value
-	 */
-	public void addBodyParameter(String key, String value) {
-		this.bodyParams.add(key, value);
-	}
-
-	/**
 	 * Add a QueryString parameter
 	 * 
 	 * @param key
@@ -200,30 +184,6 @@ public class Request {
 	 */
 	public void addQuerystringParameter(String key, String value) {
 		this.querystringParams.add(key, value);
-	}
-
-	/**
-	 * Add body payload.
-	 * 
-	 * This method is used when the HTTP body is not a form-url-encoded string,
-	 * but another thing. Like for example XML.
-	 * 
-	 * Note: The contents are not part of the OAuth signature
-	 * 
-	 * @param payload
-	 *            the body of the request
-	 */
-	public void addPayload(String payload) {
-		this.payload = payload;
-	}
-
-	/**
-	 * Overloaded version for byte arrays
-	 * 
-	 * @param payload
-	 */
-	public void addPayload(byte[] payload) {
-		this.bytePayload = payload.clone();
 	}
 
 	/**
@@ -245,14 +205,6 @@ public class Request {
 		}
 	}
 
-	/**
-	 * Obtains a {@link ParameterList} of the body parameters.
-	 * 
-	 * @return a {@link ParameterList}containing the body parameters.
-	 */
-	public ParameterList getBodyParams() {
-		return bodyParams;
-	}
 
 	/**
 	 * Obtains the URL of the HTTP Request.
@@ -270,34 +222,6 @@ public class Request {
 	 */
 	public String getSanitizedUrl() {
 		return url.replaceAll("\\?.*", "").replace("\\:\\d{4}", "");
-	}
-
-	/**
-	 * Returns the body of the request
-	 * 
-	 * @return form encoded string
-	 * @throws OAuthException
-	 *             if the charset chosen is not supported
-	 */
-	public String getBodyContents() {
-		try {
-			return new String(getByteBodyContents(), getCharset());
-		} catch (UnsupportedEncodingException uee) {
-			throw new OAuthException("Unsupported Charset: " + charset, uee);
-		}
-	}
-
-	byte[] getByteBodyContents() {
-		if (bytePayload != null)
-			return bytePayload;
-		String body = (payload != null) ? payload : bodyParams
-				.asFormUrlEncodedString();
-		try {
-			return body.getBytes(getCharset());
-		} catch (UnsupportedEncodingException uee) {
-			throw new OAuthException("Unsupported Charset: " + getCharset(),
-					uee);
-		}
 	}
 
 	/**

@@ -28,9 +28,7 @@ public class OAuth20ServiceImpl implements OAuthService
   public Token getAccessToken(Token requestToken, Verifier verifier)
   {
     OAuthRequest request = new OAuthRequest(api.getAccessTokenVerb(), api.getAccessTokenEndpoint());
-    // QQ
-    request.addQuerystringParameter("grant_type", "authorization_code");
-    
+    request.addQuerystringParameter(OAuthConstants.GRANT_TYPE, "authorization_code");
     request.addQuerystringParameter(OAuthConstants.CLIENT_ID, config.getApiKey());
     request.addQuerystringParameter(OAuthConstants.CLIENT_SECRET, config.getApiSecret());
     request.addQuerystringParameter(OAuthConstants.CODE, verifier.getValue());
