@@ -102,21 +102,21 @@ public class Request {
 
 	private HttpUriRequest convertRequest(Verb verb, String completeUrl) {
 		if (Verb.GET == verb) {
-			return new HttpGet(this.url);
+			return new HttpGet(completeUrl);
 		} else if (Verb.POST == verb) {
-			return new HttpPost(completeUrl);
+			return new HttpPost(this.url);
 		} else if (Verb.PUT == verb) {
-			return new HttpPut(completeUrl);
+			return new HttpPut(this.url);
 		} else if (Verb.DELETE == verb) {
-			return new HttpDelete(completeUrl);
+			return new HttpDelete(this.url);
 		} else if (Verb.HEAD == verb) {
-			return new HttpHead(completeUrl);
+			return new HttpHead(this.url);
 		} else if (Verb.OPTIONS == verb) {
-			return new HttpOptions(completeUrl);
+			return new HttpOptions(this.url);
 		} else if (Verb.TRACE == verb) {
-			return new HttpTrace(completeUrl);
+			return new HttpTrace(this.url);
 		} else if (Verb.PATCH == verb) {
-			return new HttpPatch(completeUrl);
+			return new HttpPatch(this.url);
 		}
 		throw new IllegalArgumentException(
 				String.format("unkown verb:%s", verb));

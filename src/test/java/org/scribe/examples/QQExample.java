@@ -22,7 +22,7 @@ public class QQExample {
 		String apiKey = "100443832";
 		String apiSecret = "82be7260c81c68408e71e46d3da7ed75";
 		OAuthService service = new ServiceBuilder().provider(QQApi.class)
-				.apiKey(apiKey).apiSecret(apiSecret).callback("http://ifeeds.duapp.com/oauth/qq/callback").build();
+				.apiKey(apiKey).apiSecret(apiSecret).callback("http://1.ifeeds.duapp.com/oauth/qq/callback").build();
 		Scanner in = new Scanner(System.in);
 
 		System.out.println("=== " + NETWORK_NAME + "'s OAuth Workflow ===");
